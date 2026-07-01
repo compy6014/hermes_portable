@@ -62,7 +62,7 @@ try {
 
     Initialize-Logger -ProjectRoot $ProjectRoot
 
-    Write-Log INFO "Project root: $ProjectRoot"
+    Write-InfoLog "Project root: $ProjectRoot"
 
     $config = Get-PortableConfig -ProjectRoot $ProjectRoot
 
@@ -70,11 +70,11 @@ try {
         -ProjectRoot $ProjectRoot `
         -Config $config
 
-    Write-Log INFO "Environment initialized."
+    Write-InfoLog "Environment initialized."
 
     Test-WSL
 
-    Write-Log INFO "Bootstrap completed successfully."
+    Write-InfoLog "Bootstrap completed successfully."
 
     exit 0
 }
