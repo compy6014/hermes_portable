@@ -84,7 +84,14 @@ function Test-PortableConfig {
         "Cache",
         "State",
         "Tmp",
-        "Tools"
+        "Tools",
+        "Downloads",
+        "Backups",
+        "LogLevel",
+        "RuntimeName",
+        "RequiredWSLVersion",
+        "EnableDiagnostics",
+        "EnableDebugLogging"
     )
 
     foreach ($property in $required) {
