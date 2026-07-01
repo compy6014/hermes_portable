@@ -46,7 +46,7 @@ function Initialize-Logger {
             -Path $logDirectory | Out-Null
     }
 
-    $script:LogLevel = $Level
+    $script:LogLevel = $Level.ToUpper()
     $script:LogFile = Join-Path $logDirectory "PortableHermes.log"
 
     if (!(Test-Path $script:LogFile)) {
@@ -169,6 +169,6 @@ function Set-LogLevel {
 
     )
 
-    $script:LogLevel = $Level
+    $script:LogLevel = $Level.ToUpper()
 
 }
