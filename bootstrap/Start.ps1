@@ -25,18 +25,17 @@ function Write-Banner {
 function Get-ProjectRoot {
     return (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 }
-
 function Import-Libraries {
 
     param(
+        [Parameter(Mandatory)]
         [string]$ProjectRoot
     )
 
     $libraries = @(
         "Logger.ps1",
         "Config.ps1",
-        "Environment.ps1",
-        "Import-Libraries.ps1"
+        "Environment.ps1"
     )
 
     foreach ($library in $libraries) {
@@ -44,7 +43,7 @@ function Import-Libraries {
         $path = Join-Path $ProjectRoot "lib\$library"
 
         if (!(Test-Path $path)) {
-            throw "Required library not found:`n$path"
+            throw "Missing required library:`n$path"
         }
 
         . $path
@@ -53,26 +52,37 @@ function Import-Libraries {
 
 #endregion
 
-Write-Banner
+try {
 
-$ProjectRoot = Get-ProjectRoot
+    Write-Banner
 
-Import-Libraries -ProjectRoot $ProjectRoot
+    $ProjectRoot = Get-ProjectRoot
 
-Initialize-Logger -ProjectRoot $ProjectRoot
+    Import-Libraries -ProjectRoot $ProjectRoot
 
-Write-Log INFO "Project root: $ProjectRoot"
+    Initialize-Logger -ProjectRoot $ProjectRoot
 
-$config = Get-PortableConfig -ProjectRoot $ProjectRoot
+    Write-Log INFO "Project root: $ProjectRoot"
 
-Initialize-Environment `
-    -ProjectRoot $ProjectRoot `
-    -Config $config
+    $config = Get-PortableConfig -ProjectRoot $ProjectRoot
 
-Write-Log INFO "Environment initialized."
+    Initialize-Environment `
+        -ProjectRoot $ProjectRoot `
+        -Config $config
 
-Test-WSL
+    Write-Log INFO "Environment initialized."
 
-Write-Log INFO "Bootstrap completed successfully."
+    Test-WSL
 
-exit 0
+    Write-Log INFO "Bootstrap completed successfully."
+
+    exit 0
+}
+catch {
+
+    Write-Host ""
+    Write-Host "PortableHermes failed to start." -ForegroundColor Red
+    Write-Host $_.Exception.Message -ForegroundColor Yellow
+
+    exit 1
+}
