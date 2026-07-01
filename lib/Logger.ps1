@@ -157,3 +157,18 @@ function Write-ErrorLog {
         -Level ERROR `
         -Message $Message
 }
+
+function Set-LogLevel {
+
+    [CmdletBinding()]
+    param(
+
+        [Parameter(Mandatory)]
+        [ValidateSet("DEBUG","INFO","WARN","ERROR")]
+        [string]$Level
+
+    )
+
+    $script:LogLevel = $Level
+
+}
