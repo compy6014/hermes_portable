@@ -62,9 +62,11 @@ try {
 
     Initialize-Logger -ProjectRoot $ProjectRoot
 
-    Write-InfoLog "Project root: $ProjectRoot"
-
     $config = Get-PortableConfig -ProjectRoot $ProjectRoot
+
+    Set-LogLevel $config.LogLevel
+
+    Write-InfoLog "Project root: $ProjectRoot"
 
     Initialize-Environment `
         -ProjectRoot $ProjectRoot `
