@@ -157,11 +157,3 @@ function Write-ErrorLog {
         -Level ERROR `
         -Message $Message
 }
-
-Export-ModuleMember -Function `
-    Initialize-Logger,
-    Write-Log,
-    Write-DebugLog,
-    Write-InfoLog,
-    Write-WarnLog,
-    Write-ErrorLog
