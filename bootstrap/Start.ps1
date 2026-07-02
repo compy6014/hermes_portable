@@ -56,9 +56,11 @@ try {
     }
 
     . $loader
+    Write-Host "Loader loaded."
 
     Import-PortableLibraries `
         -ProjectRoot $ProjectRoot
+    Write-Host "Libraries imported."
 
     # ---------------------------------------------------------------------
     # Initialize logger
