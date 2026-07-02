@@ -22,9 +22,12 @@ function Write-Banner {
     Write-Host ""
 }
 
-function Get-ProjectRoot {
+function Resolve-ProjectRoot {
+
     return (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+
 }
+
 function Import-Libraries {
 
     param(
@@ -56,7 +59,7 @@ try {
 
     Write-Banner
 
-    $ProjectRoot = Get-ProjectRoot
+    $ProjectRoot = Resolve-ProjectRoot
 
     Import-Libraries -ProjectRoot $ProjectRoot
 
