@@ -11,6 +11,8 @@
 
 set -euo pipefail
 
+source "${SCRIPT_DIR}/environment.sh"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 BOOTSTRAP_SCRIPT="${SCRIPT_DIR}/bootstrap.sh"
