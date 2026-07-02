@@ -26,8 +26,11 @@ function Write-Banner {
 
 function Resolve-ProjectRoot {
 
-    return (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+    $root = Join-Path $PSScriptRoot ".."
 
+    $resolved = Get-Item -LiteralPath $root -ErrorAction Stop
+
+    return $resolved.FullName
 }
 
 #endregion
