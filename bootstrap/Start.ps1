@@ -3,12 +3,11 @@
     PortableHermes Bootstrap
 
 .DESCRIPTION
-    Main entry point for PortableHermes.
-    Initializes the PortableHermes environment and verifies
-    the host before launching the runtime.
+    Entry point for PortableHermes on Windows.
+    Loads libraries, initializes environment, and starts validation.
 
 .NOTES
-    Compatible with Windows PowerShell 5.1
+    Windows PowerShell 5.1 compatible
 #>
 
 $ErrorActionPreference = "Stop"
@@ -38,53 +37,54 @@ try {
     Write-Banner
 
     # ---------------------------------------------------------------------
-    # Determine project root
+    # Project root
     # ---------------------------------------------------------------------
 
     $ProjectRoot = Resolve-ProjectRoot
 
     # ---------------------------------------------------------------------
-    # Load library loader
+    # Load libraries (DIRECT DOTTING - no loader)
     # ---------------------------------------------------------------------
 
-    $loader = Join-Path `
-        $ProjectRoot `
-        "lib\Import-Libraries.ps1"
+    $libraries = @(
+        "Logger.ps1",
+        "Config.ps1",
+        "Environment.ps1",
+        "WSL.ps1"
+    )
 
-    if (!(Test-Path $loader)) {
-        throw "Library loader not found:`n$loader"
+    foreach ($lib in $libraries) {
+
+        $path = Join-Path $ProjectRoot "lib\$lib"
+
+        if (!(Test-Path $path)) {
+            throw "Missing library: $path"
+        }
+
+        . $path
     }
 
-    . $loader
-    Write-Host "Loader loaded."
-
-    Import-PortableLibraries `
-        -ProjectRoot $ProjectRoot
-    Write-Host "Libraries imported."
+    Write-Host "Libraries loaded."
 
     # ---------------------------------------------------------------------
-    # Initialize logger
+    # Logger
     # ---------------------------------------------------------------------
 
-    Initialize-Logger `
-        -ProjectRoot $ProjectRoot
+    Initialize-Logger -ProjectRoot $ProjectRoot
 
     # ---------------------------------------------------------------------
-    # Load configuration
+    # Config
     # ---------------------------------------------------------------------
 
-    $config = Get-PortableConfig `
-        -ProjectRoot $ProjectRoot
+    $config = Get-PortableConfig -ProjectRoot $ProjectRoot
 
-    Set-LogLevel `
-        -Level $config.LogLevel
+    Set-LogLevel -Level $config.LogLevel
 
     Write-InfoLog "PortableHermes Version $($config.Version)"
-
     Write-InfoLog "Project root: $ProjectRoot"
 
     # ---------------------------------------------------------------------
-    # Initialize environment
+    # Environment
     # ---------------------------------------------------------------------
 
     Initialize-Environment `
@@ -94,10 +94,12 @@ try {
     Write-InfoLog "Environment initialized."
 
     # ---------------------------------------------------------------------
-    # Verify WSL
+    # WSL check
     # ---------------------------------------------------------------------
 
     Test-WSL
+
+    Write-InfoLog "WSL check completed."
 
     Write-InfoLog "Bootstrap completed successfully."
 
@@ -110,16 +112,9 @@ catch {
     Write-Host "PortableHermes failed to start." -ForegroundColor Red
     Write-Host $_.Exception.Message -ForegroundColor Yellow
 
-    try {
-
-        if (Get-Command Write-ErrorLog -ErrorAction SilentlyContinue) {
-            Write-ErrorLog $_.Exception.Message
-        }
-
-    }
-    catch {
+    if (Get-Command Write-ErrorLog -ErrorAction SilentlyContinue) {
+        Write-ErrorLog $_.Exception.Message
     }
 
     exit 1
-
 }
