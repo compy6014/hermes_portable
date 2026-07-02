@@ -38,7 +38,8 @@ function Import-Libraries {
     $libraries = @(
         "Logger.ps1",
         "Config.ps1",
-        "Environment.ps1"
+        "Environment.ps1",
+        "WSL.ps1"
     )
 
     foreach ($library in $libraries) {
