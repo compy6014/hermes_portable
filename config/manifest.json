@@ -2,6 +2,8 @@
   "project": "PortableHermes",
   "version": "0.0.2-dev",
   "build": 1,
+  "minimumBootstrapVersion": 1,
+  "generated": "",
   "files": [
     "bootstrap/Start.cmd",
     "bootstrap/Start.ps1",
