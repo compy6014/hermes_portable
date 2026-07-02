@@ -34,17 +34,11 @@ fi
 ###############################################################################
 # Runtime directories
 ###############################################################################
+source "${SCRIPT_DIR}/environment.sh"
 
-export PH_ROOT="${PROJECT_ROOT}"
+ph_create_directories
 
-export PH_RUNTIME="${PH_ROOT}/runtime"
-export PH_WORKSPACE="${PH_ROOT}/workspace"
-
-export PH_CACHE="${PH_ROOT}/cache"
-export PH_STATE="${PH_ROOT}/state"
-export PH_TMP="${PH_ROOT}/tmp"
-
-export PH_LOGS="${PH_ROOT}/logs"
+ph_print_environment
 
 mkdir -p "${PH_RUNTIME}"
 mkdir -p "${PH_WORKSPACE}"
