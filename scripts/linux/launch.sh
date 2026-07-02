@@ -68,6 +68,10 @@ run_stage \
     "Environment Verification" \
     "${CHECK_SCRIPT}"
 
+run_stage \
+    "Filesystem Isolation" \
+    "${SCRIPT_DIR}/isolation.sh"
+
 ###############################################################################
 # Future stages
 ###############################################################################
