@@ -4,22 +4,25 @@
 
 .DESCRIPTION
     Main entry point for PortableHermes.
-    Initializes the environment and starts the bootstrap pipeline.
+    Initializes the PortableHermes environment and verifies
+    the host before launching the runtime.
 
 .NOTES
-    Version: 0.0.2-dev
+    Compatible with Windows PowerShell 5.1
 #>
 
 $ErrorActionPreference = "Stop"
 
-#region Functions
+#region Helper Functions
 
 function Write-Banner {
+
     Write-Host ""
-    Write-Host "==============================================="
-    Write-Host "           PortableHermes Bootstrap"
-    Write-Host "==============================================="
+    Write-Host "===============================================" -ForegroundColor Cyan
+    Write-Host "           PortableHermes Bootstrap" -ForegroundColor Cyan
+    Write-Host "===============================================" -ForegroundColor Cyan
     Write-Host ""
+
 }
 
 function Resolve-ProjectRoot {
@@ -28,49 +31,59 @@ function Resolve-ProjectRoot {
 
 }
 
-function Import-Libraries {
-
-    param(
-        [Parameter(Mandatory)]
-        [string]$ProjectRoot
-    )
-
-    $libraries = @(
-        "Logger.ps1",
-        "Config.ps1",
-        "Environment.ps1",
-        "WSL.ps1"
-    )
-
-    foreach ($library in $libraries) {
-
-        $path = Join-Path $ProjectRoot "lib\$library"
-
-        if (!(Test-Path $path)) {
-            throw "Missing required library:`n$path"
-        }
-
-        . $path
-    }
-}
-
 #endregion
 
 try {
 
     Write-Banner
 
+    # ---------------------------------------------------------------------
+    # Determine project root
+    # ---------------------------------------------------------------------
+
     $ProjectRoot = Resolve-ProjectRoot
 
-    Import-Libraries -ProjectRoot $ProjectRoot
+    # ---------------------------------------------------------------------
+    # Load library loader
+    # ---------------------------------------------------------------------
 
-    Initialize-Logger -ProjectRoot $ProjectRoot
+    $loader = Join-Path `
+        $ProjectRoot `
+        "lib\Import-Libraries.ps1"
 
-    $config = Get-PortableConfig -ProjectRoot $ProjectRoot
+    if (!(Test-Path $loader)) {
+        throw "Library loader not found:`n$loader"
+    }
 
-    Set-LogLevel $config.LogLevel
+    . $loader
+
+    Import-PortableLibraries `
+        -ProjectRoot $ProjectRoot
+
+    # ---------------------------------------------------------------------
+    # Initialize logger
+    # ---------------------------------------------------------------------
+
+    Initialize-Logger `
+        -ProjectRoot $ProjectRoot
+
+    # ---------------------------------------------------------------------
+    # Load configuration
+    # ---------------------------------------------------------------------
+
+    $config = Get-PortableConfig `
+        -ProjectRoot $ProjectRoot
+
+    Set-LogLevel `
+        -Level $config.LogLevel
+
+    Write-InfoLog "PortableHermes Version $($config.Version)"
 
     Write-InfoLog "Project root: $ProjectRoot"
+
+    # ---------------------------------------------------------------------
+    # Initialize environment
+    # ---------------------------------------------------------------------
 
     Initialize-Environment `
         -ProjectRoot $ProjectRoot `
@@ -78,11 +91,16 @@ try {
 
     Write-InfoLog "Environment initialized."
 
+    # ---------------------------------------------------------------------
+    # Verify WSL
+    # ---------------------------------------------------------------------
+
     Test-WSL
 
     Write-InfoLog "Bootstrap completed successfully."
 
     exit 0
+
 }
 catch {
 
@@ -90,5 +108,16 @@ catch {
     Write-Host "PortableHermes failed to start." -ForegroundColor Red
     Write-Host $_.Exception.Message -ForegroundColor Yellow
 
+    try {
+
+        if (Get-Command Write-ErrorLog -ErrorAction SilentlyContinue) {
+            Write-ErrorLog $_.Exception.Message
+        }
+
+    }
+    catch {
+    }
+
     exit 1
+
 }
