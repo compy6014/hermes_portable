@@ -1,0 +1,16 @@
+{
+  "project": "PortableHermes",
+  "version": "0.0.2-dev",
+  "build": 1,
+  "files": [
+    "bootstrap/Start.cmd",
+    "bootstrap/Start.ps1",
+    "lib/Logger.ps1",
+    "lib/Config.ps1",
+    "lib/Environment.ps1",
+    "lib/WSL.ps1",
+    "lib/Import-Libraries.ps1",
+    "config/portable.json",
+    "config/manifest.json"
+  ]
+}
