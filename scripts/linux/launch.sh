@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 
 ###############################################################################
 # PortableHermes
@@ -12,7 +12,7 @@
 set -euo pipefail
 
 ###############################################################################
-# Resolve script directory FIRST (fix critical bug)
+# Resolve script directory FIRST (critical for portability)
 ###############################################################################
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -58,7 +58,7 @@ run_stage() {
 }
 
 ###############################################################################
-# Startup
+# Startup pipeline
 ###############################################################################
 
 print_banner
@@ -76,21 +76,31 @@ run_stage \
     "${SCRIPT_DIR}/isolation.sh"
 
 ###############################################################################
-# Future stages
+# Backend execution layer (NEW ARCHITECTURE)
 ###############################################################################
 
 echo
 echo "------------------------------------------------"
-echo "Runtime initialization complete."
+echo "Launching PortableHermes backend..."
+echo "------------------------------------------------"
+
+BACKEND_RUNNER="${PROJECT_ROOT}/launcher/backend_runner.py"
+
+if [[ ! -f "${BACKEND_RUNNER}" ]]; then
+    echo "[ERROR] Missing backend runner:"
+    echo "        ${BACKEND_RUNNER}"
+    exit 1
+fi
+
+python3 "${BACKEND_RUNNER}"
+
+EXIT_CODE=$?
+
 echo
-echo "Future stages:"
-echo "  - Python runtime"
-echo "  - Node.js runtime"
-echo "  - Hermes Agent"
-echo "  - MCP Servers"
-echo "  - Local LLM"
-echo
-echo "Nothing else has been started yet."
+echo "------------------------------------------------"
+echo "[Hermes] Backend execution finished"
+echo "[Hermes] Exit code: ${EXIT_CODE}"
+echo "------------------------------------------------"
 echo
 
-exit 0
+exit "${EXIT_CODE}"
