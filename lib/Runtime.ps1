@@ -1,6 +1,12 @@
 <#
 .SYNOPSIS
-    PortableHermes Runtime Bridge (Windows → WSL)
+    PortableHermes Runtime Bridge (Windows -> WSL)
+
+.DESCRIPTION
+    Executes the Linux runtime inside WSL.
+
+.NOTES
+    Compatible with Windows PowerShell 5.1
 #>
 
 if ($script:PortableHermesRuntimeLoaded) {
@@ -9,71 +15,134 @@ if ($script:PortableHermesRuntimeLoaded) {
 
 $script:PortableHermesRuntimeLoaded = $true
 
+# -------------------------------------------------------------------------
+# Convert Windows path to WSL path
+# -------------------------------------------------------------------------
+
 function ConvertTo-WSLPath {
-    param([string]$WindowsPath)
+
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$WindowsPath
+    )
 
     if ([string]::IsNullOrWhiteSpace($WindowsPath)) {
-        throw "Empty path"
+        throw "ConvertTo-WSLPath: path is empty."
     }
 
     $path = $WindowsPath.Replace("\", "/")
 
-    if ($path -match "^([A-Za-z]):/(.*)") {
+    if ($path -match "^([A-Za-z]):/(.*)$") {
+
         $drive = $matches[1].ToLower()
         $rest  = $matches[2]
+
         return "/mnt/$drive/$rest"
     }
 
     return $path
 }
 
+# -------------------------------------------------------------------------
+# Execute command inside WSL
+# -------------------------------------------------------------------------
+
 function Invoke-WSLCommand {
+
+    [CmdletBinding()]
     param(
+
+        [Parameter(Mandatory)]
         [string]$Command,
+
         [string]$WorkingDirectory = ""
     )
 
-    $wsl = (Get-Command wsl.exe).Source
+    $wslExe = (Get-Command "wsl.exe" -ErrorAction Stop).Source
 
     if (-not [string]::IsNullOrWhiteSpace($WorkingDirectory)) {
-        $cmd = "cd `"$WorkingDirectory`" && $Command"
+
+        $linuxCommand = @"
+cd "$WorkingDirectory"
+$Command
+"@
     }
     else {
-        $cmd = $Command
+
+        $linuxCommand = $Command
+
     }
 
-    Write-InfoLog "WSL: $Command"
+    Write-InfoLog "Executing WSL command:"
+    Write-InfoLog $linuxCommand
 
-    $output = & $wsl --exec bash -c "$cmd" 2>&1
-    $exit = $LASTEXITCODE
+    $output = & $wslExe bash -c $linuxCommand 2>&1
+
+    $exitCode = $LASTEXITCODE
 
     return @{
-        Output = $output
-        ExitCode = $exit
+        Output   = $output
+        ExitCode = $exitCode
     }
+
 }
 
+# -------------------------------------------------------------------------
+# Launch Hermes runtime
+# -------------------------------------------------------------------------
+
 function Start-HermesRuntime {
+
+    [CmdletBinding()]
     param(
+
+        [Parameter(Mandatory)]
         [string]$ProjectRoot,
+
         [string]$EntryScript = "scripts/linux/launch.sh"
+
     )
 
     Write-InfoLog "Launching Hermes runtime..."
 
-    if (-not (Test-Path (Join-Path $ProjectRoot $EntryScript))) {
-        throw "Missing entry script: $EntryScript"
+    $entryWindows = Join-Path $ProjectRoot $EntryScript
+
+    if (-not (Test-Path -LiteralPath $entryWindows)) {
+
+        throw "Missing runtime script:`n$entryWindows"
+
     }
 
     $wslRoot = ConvertTo-WSLPath $ProjectRoot
+
+    Write-DebugLog "Windows root : $ProjectRoot"
+    Write-DebugLog "WSL root     : $wslRoot"
 
     $result = Invoke-WSLCommand `
         -WorkingDirectory $wslRoot `
         -Command "bash ./scripts/linux/launch.sh"
 
     if ($result.ExitCode -ne 0) {
-        throw "WSL runtime failed: $($result.Output)"
+
+        Write-ErrorLog "Linux runtime failed."
+
+        if ($result.Output) {
+
+            Write-Host ""
+            Write-Host "============= WSL OUTPUT =============" -ForegroundColor Yellow
+            $result.Output
+            Write-Host "======================================" -ForegroundColor Yellow
+            Write-Host ""
+
+        }
+
+        throw "Linux runtime exited with code $($result.ExitCode)."
+
     }
 
+    Write-InfoLog "Linux runtime completed."
+
     return $result.Output
+
 }
