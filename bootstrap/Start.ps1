@@ -1,71 +1,50 @@
 <#
 .SYNOPSIS
     PortableHermes Bootstrap Entry Point
-
-.DESCRIPTION
-    Initializes PortableHermes on Windows, loads libraries,
-    configures environment, and prepares WSL runtime execution.
 #>
 
 $ErrorActionPreference = "Stop"
 
-# -------------------------------------------------------------------------
-# Banner
-# -------------------------------------------------------------------------
 Write-Host ""
 Write-Host "===============================================" -ForegroundColor Cyan
 Write-Host "           PortableHermes Bootstrap" -ForegroundColor Cyan
 Write-Host "===============================================" -ForegroundColor Cyan
 Write-Host ""
 
-# -------------------------------------------------------------------------
-# Resolve project root (isolated variable, cannot be overwritten easily)
-# -------------------------------------------------------------------------
 function Resolve-ProjectRoot {
     $root = Join-Path $PSScriptRoot ".."
-    return (Get-Item -LiteralPath $root -ErrorAction Stop).FullName
+    return (Get-Item -LiteralPath $root).FullName
 }
 
-# IMPORTANT: use unique variable name to avoid library collisions
 $PH_ProjectRoot = Resolve-ProjectRoot
 
 Write-Host "DEBUG ProjectRoot = [$PH_ProjectRoot]"
 
-# -------------------------------------------------------------------------
-# Safe path helper
-# -------------------------------------------------------------------------
 function SafeJoinPath {
-
-    param(
-        [Parameter(Mandatory)]
-        [string]$Base,
-
-        [Parameter(Mandatory)]
-        [string]$Child
-    )
+    param([string]$Base, [string]$Child)
 
     if ([string]::IsNullOrWhiteSpace($Base)) {
-        throw "SafeJoinPath: Base path is null or empty"
+        throw "SafeJoinPath: Base is null"
     }
 
     return Join-Path -Path $Base -ChildPath $Child
 }
 
-# -------------------------------------------------------------------------
-# Load libraries (direct dot-sourcing, no loader abstraction)
-# -------------------------------------------------------------------------
+# -------------------------
+# Load libraries
+# -------------------------
 $libraries = @(
     "Logger.ps1",
     "Config.ps1",
     "Environment.ps1",
-    "WSL.ps1"
+    "WSL.ps1",
+    "Runtime.ps1"
 )
 
 foreach ($lib in $libraries) {
-
     $path = SafeJoinPath $PH_ProjectRoot "lib\$lib"
 
-    if (-not (Test-Path -LiteralPath $path)) {
+    if (-not (Test-Path $path)) {
         throw "Missing library: $path"
     }
 
@@ -74,42 +53,46 @@ foreach ($lib in $libraries) {
 
 Write-Host "Libraries loaded."
 
-# -------------------------------------------------------------------------
-# Initialize Logger FIRST
-# -------------------------------------------------------------------------
+# -------------------------
+# Init logger
+# -------------------------
 Initialize-Logger -ProjectRoot $PH_ProjectRoot
-
 Write-InfoLog "Logger initialized."
 
-# -------------------------------------------------------------------------
-# Load configuration
-# -------------------------------------------------------------------------
+# -------------------------
+# Config
+# -------------------------
 $config = Get-PortableConfig -ProjectRoot $PH_ProjectRoot
-
 Set-LogLevel -Level $config.LogLevel
 
 Write-InfoLog "PortableHermes Version $($config.Version)"
 Write-InfoLog "Project root: $PH_ProjectRoot"
 
-# -------------------------------------------------------------------------
-# Initialize environment
-# -------------------------------------------------------------------------
-Initialize-Environment `
-    -ProjectRoot $PH_ProjectRoot `
-    -Config $config
-
+# -------------------------
+# Environment
+# -------------------------
+Initialize-Environment -ProjectRoot $PH_ProjectRoot -Config $config
 Write-InfoLog "Environment initialized."
 
-# -------------------------------------------------------------------------
+# -------------------------
 # WSL check
-# -------------------------------------------------------------------------
+# -------------------------
 Test-WSL
-
 Write-InfoLog "WSL check completed."
 
-# -------------------------------------------------------------------------
-# Success
-# -------------------------------------------------------------------------
+# -------------------------
+# RUNTIME EXECUTION (CRITICAL FIX)
+# -------------------------
+Write-InfoLog "Starting Linux runtime..."
+
+$result = Start-HermesRuntime -ProjectRoot $PH_ProjectRoot
+
+Write-Host ""
+Write-Host "================ LINUX OUTPUT ================" -ForegroundColor Cyan
+Write-Host $result
+Write-Host "=============================================" -ForegroundColor Cyan
+Write-Host ""
+
 Write-InfoLog "Bootstrap completed successfully."
 
 exit 0
