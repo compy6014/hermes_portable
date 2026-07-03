@@ -1,0 +1,26 @@
+{
+    "ProjectName": "PortableHermes",
+    "Version": "0.0.2-dev",
+
+    "Runtime": "runtime",
+    "Workspace": "workspace",
+
+    "Logs": "logs",
+    "Cache": "cache",
+    "State": "state",
+    "Tmp": "tmp",
+
+    "Tools": "tools",
+    "Downloads": "downloads",
+    "Backups": "backups",
+
+    "LogLevel": "INFO",
+
+    "RuntimeName": "PortableHermes",
+
+    "RequiredWSLVersion": 2,
+
+    "EnableDiagnostics": true,
+
+    "EnableDebugLogging": false
+}
