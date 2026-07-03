@@ -52,32 +52,34 @@ function Invoke-WSLCommand {
 
     [CmdletBinding()]
     param(
-
-        [Parameter(Mandatory)]
         [string]$Command,
-
         [string]$WorkingDirectory = ""
     )
 
     $wslExe = (Get-Command "wsl.exe" -ErrorAction Stop).Source
 
+    # -------------------------------------------------------------
+    # Normalize command (CRLF FIX)
+    # -------------------------------------------------------------
+    $Command = $Command -replace "`r", ""
+
     if (-not [string]::IsNullOrWhiteSpace($WorkingDirectory)) {
 
-        $linuxCommand = @"
-cd "$WorkingDirectory"
-$Command
-"@
+        $WorkingDirectory = $WorkingDirectory -replace "`r", ""
+
+        # IMPORTANT: single-line safe bash command
+        $finalCommand = "cd `"$WorkingDirectory`" && $Command"
+
     }
     else {
-
-        $linuxCommand = $Command
-
+        $finalCommand = $Command
     }
 
     Write-InfoLog "Executing WSL command:"
-    Write-InfoLog $linuxCommand
+    Write-InfoLog $finalCommand
 
-    $output = & $wslExe bash -c $linuxCommand 2>&1
+    # IMPORTANT: avoid multiline heredoc entirely
+    $output = & $wslExe -d Ubuntu-22.04 bash -c $finalCommand 2>&1
 
     $exitCode = $LASTEXITCODE
 
@@ -85,7 +87,6 @@ $Command
         Output   = $output
         ExitCode = $exitCode
     }
-
 }
 
 # -------------------------------------------------------------------------
