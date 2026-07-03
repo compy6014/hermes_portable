@@ -1,117 +1,61 @@
 #!/usr/bin/env bash
 
-###############################################################################
-# PortableHermes
-#
-# Linux Runtime Launcher
-#
-# Main Linux entry point executed via WSL.
-# Assumes bootstrap.sh has already prepared environment.
-###############################################################################
-
 set -euo pipefail
-
-###############################################################################
-# Resolve script directory FIRST (important)
-###############################################################################
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-BOOTSTRAP_SCRIPT="${SCRIPT_DIR}/bootstrap.sh"
-CHECK_SCRIPT="${SCRIPT_DIR}/check_environment.sh"
-
-###############################################################################
-# Load shared environment
-###############################################################################
-
-if [[ ! -f "${SCRIPT_DIR}/environment.sh" ]]; then
-    echo "[FATAL] Missing environment.sh in: ${SCRIPT_DIR}"
-    exit 1
-fi
-
 source "${SCRIPT_DIR}/environment.sh"
 
-###############################################################################
-# Banner
-###############################################################################
-
 print_banner() {
-
     echo
     echo "==============================================="
-    echo "         PortableHermes Linux Runtime"
+    echo "     PortableHermes Linux Runtime (DEBUG)"
     echo "==============================================="
     echo
-
 }
-
-###############################################################################
-# Stage runner
-###############################################################################
-
-run_stage() {
-
-    local NAME="$1"
-    local COMMAND="$2"
-
-    echo
-    echo "------------------------------------------------"
-    echo "Stage: ${NAME}"
-    echo "------------------------------------------------"
-
-    eval "${COMMAND}"
-
-    echo "[OK] ${NAME}"
-}
-
-###############################################################################
-# Start
-###############################################################################
 
 print_banner
 
-echo "[INFO] Project root: ${PROJECT_ROOT}"
+echo "[DEBUG] SCRIPT_DIR   = ${SCRIPT_DIR}"
+echo "[DEBUG] PROJECT_ROOT = ${PROJECT_ROOT}"
+echo "[DEBUG] USER         = $(whoami)"
+echo "[DEBUG] PWD          = $(pwd)"
+echo
 
-###############################################################################
-# Ensure environment directories exist
-###############################################################################
+ph_create_directories
+ph_print_environment
 
-run_stage "Environment Initialization" "ph_create_directories"
+echo
+echo "[STAGE] Python availability check"
+python3 --version || echo "[ERROR] Python missing"
 
-###############################################################################
-# Show environment
-###############################################################################
+echo
+echo "[STAGE] Listing project structure"
+ls -la "${PROJECT_ROOT}" || echo "[ERROR] Cannot list project root"
 
-run_stage "Environment Overview" "ph_print_environment"
-
-###############################################################################
-# Check Python availability
-###############################################################################
-
-run_stage "Python Check" "python3 --version"
-
-###############################################################################
-# Launch Agent (FIRST REAL RUNTIME STEP)
-###############################################################################
+echo
+echo "[STAGE] Checking agent path"
 
 AGENT_PATH="${PROJECT_ROOT}/agent/main.py"
 
 if [[ ! -f "${AGENT_PATH}" ]]; then
-    echo "[FATAL] Missing agent entrypoint: ${AGENT_PATH}"
+    echo "[FATAL] agent/main.py NOT FOUND at:"
+    echo "        ${AGENT_PATH}"
     exit 1
 fi
 
-run_stage "Launching Hermes Agent" "python3 ${AGENT_PATH}"
-
-###############################################################################
-# Shutdown
-###############################################################################
+echo "[OK] Found agent: ${AGENT_PATH}"
 
 echo
-echo "------------------------------------------------"
-echo "PortableHermes runtime completed successfully."
-echo "------------------------------------------------"
-echo
+echo "[STAGE] Running agent..."
 
-exit 0
+python3 "${AGENT_PATH}"
+
+echo
+echo "[STAGE] Agent finished execution"
+
+echo
+echo "==============================================="
+echo "Runtime completed"
+echo "==============================================="
